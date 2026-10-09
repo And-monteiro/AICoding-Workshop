@@ -28,6 +28,10 @@ Always confirm which profile (`dev` or `test`) is intended before running compos
 - Open a pull request for review instead of merging directly, even for small changes.
 - Write commit messages that explain why, not just what changed.
 - Do not push or open a PR without explicit confirmation from the user.
+- Once the user approves a PR and tells you it's good to merge (e.g. "merge it", "good to push"),
+  merge it back into `main` yourself without asking again — that confirmation is itself the
+  explicit approval for the merge. Use a normal merge (not a force push), and don't merge a PR
+  that hasn't been explicitly approved that way.
 
 ## Conventions
 
