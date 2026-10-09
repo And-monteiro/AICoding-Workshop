@@ -1,0 +1,16 @@
+# .NET
+backend/bin/
+backend/obj/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env files (workshop-only values, but kept out of git on principle)
+.env
+.env.dev
+.env.test
+
+# OS
+.DS_Store
+Thumbs.db
