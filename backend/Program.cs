@@ -13,6 +13,8 @@ app.UseCors();
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Missing ConnectionStrings:Default configuration.");
 
+await EnsureDatabaseSeededAsync(connectionString);
+
 app.MapGet("/api/messages", async () =>
 {
     var messages = new List<MessageDto>();
@@ -34,5 +36,21 @@ app.MapGet("/api/messages", async () =>
 app.MapGet("/health", () => Results.Ok("healthy"));
 
 app.Run();
+
+static async Task EnsureDatabaseSeededAsync(string connectionString)
+{
+    await using var connection = new NpgsqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    await using var createTable = new NpgsqlCommand(
+        "CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, text TEXT NOT NULL)",
+        connection);
+    await createTable.ExecuteNonQueryAsync();
+
+    await using var seed = new NpgsqlCommand(
+        "INSERT INTO messages (text) SELECT 'Hello, World!' WHERE NOT EXISTS (SELECT 1 FROM messages)",
+        connection);
+    await seed.ExecuteNonQueryAsync();
+}
 
 record MessageDto(int Id, string Text);
