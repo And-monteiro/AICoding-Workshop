@@ -46,3 +46,85 @@ Always confirm which profile (`dev` or `test`) is intended before running compos
 - Do not modify infrastructure/deploy configuration (GitHub Actions workflows, Azure/Bicep/Terraform files) without calling it out first.
 - Do not run deploy commands against the test or production infra without explicit confirmation.
 - Treat `.env.*` files as containing non-production, workshop-only values — never put real secrets in them.
+
+## Azure infrastructure (current state, as of 2026-10-13)
+
+Manually provisioned via the Azure Portal (personal Azure account, not the OutSystems corporate
+one — local `az` CLI is blocked by endpoint policy on this machine, so all infra work so far has
+been done by hand in the Portal, with image builds/pushes handled by GitHub Actions instead).
+
+- Resource group: `ai-workshop-baseline`, region **West Europe**.
+- `acraiworkshop` — Azure Container Registry, Basic tier. Holds `backend` and `frontend` images,
+  built and pushed automatically by `.github/workflows/build-and-push.yml` on every push to `main`
+  that touches `frontend/**` or `backend/**` (or via manual `workflow_dispatch`). This is the one
+  resource with a real fixed cost (~$0.17/day) that keeps accruing until deleted.
+- `env-ai-workshop` — the shared Container Apps Environment all three apps below live in.
+- `aiworkshop-backend` — Container App, image `acraiworkshop.azurecr.io/backend:latest`, ingress
+  external/HTTP, **target port 8080** (must match the Dockerfile's `ASPNETCORE_URLS`), health
+  probes (startup/liveness/readiness) pointed at **`/health`**, not the default `/` (the backend
+  has no `/` route, so the platform default probe path fails and crash-loops the container).
+- `aiworkshop-frontend` — Container App, image `acraiworkshop.azurecr.io/frontend:latest`, ingress
+  external/HTTP, target port 80 (nginx default).
+- `aiworkshop-db` — Container App running the public `postgres:16-alpine` image directly (not
+  pushed to ACR). Ingress is **internal-only, TCP, target port 5432**. Env vars `POSTGRES_DB=app_prod`,
+  `POSTGRES_USER=workshop`, `POSTGRES_PASSWORD` set directly as a plain env var (not a proper
+  Container Apps secret - acceptable for this throwaway demo, not a pattern to carry into anything
+  real). Deliberately left at **min replicas 0** (scales to zero when idle) to avoid an always-on
+  cost, in favor of managed Postgres which would have cost far more on its default tier.
+- **Important gotcha**: for TCP ingress specifically, other apps in the same environment must
+  reach this app by its **short name** (`aiworkshop-db`), not the longer
+  `*.internal.<env-id>.<region>.azurecontainerapps.io` hostname that HTTP-ingress apps get shown
+  on their Overview page. Using the long hostname for a TCP-ingress app silently fails to connect.
+- The backend's `ConnectionStrings__Default` env var is therefore:
+  `Host=aiworkshop-db;Port=5432;Database=app_prod;Username=workshop;Password=<see Portal>`.
+- The backend self-seeds its schema on startup (see `backend/Program.cs`,
+  `EnsureDatabaseSeededAsync`) as a **background task with retry/backoff**, not a blocking call -
+  this is required because `aiworkshop-db` can be cold (scaled to zero) when the backend starts,
+  and a blocking/unretried connection attempt crashed the whole app on an unhandled exception.
+- End-to-end verified working at `https://aiworkshop-frontend.whitesand-f146b069.westeurope.azurecontainerapps.io`.
+
+### Deploying to prod (set up 2026-10-13)
+
+Local `az` CLI works now (an admin reinstall via `winget` fixed the earlier "Access is denied"
+local-execution block), but calling Azure's management API from this machine/network still fails
+with a connection reset (`az login` gets past device-code auth, then the connection drops while
+fetching tenants/subscriptions) — looked like a corporate network/proxy interference, not fixed
+yet. So actual deployment still doesn't run `az` locally; it goes through GitHub Actions instead:
+
+- An Azure AD App Registration (`github-actions-ai-workshop`, client ID
+  `44b06166-9b36-4e37-aba7-c8ef5b058a90`, tenant ID `b4f264f1-3585-4a18-a942-9e61b63e8b09`) has a
+  federated OIDC credential scoped to this repo's `main` branch, and Contributor role on the
+  `ai-workshop-baseline` resource group. No client secret is stored anywhere — auth is via GitHub's
+  OIDC token exchange (`azure/login` action).
+- Those three values (client ID, tenant ID, subscription ID) are GitHub repo secrets
+  (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`), alongside the existing
+  `ACR_USERNAME`/`ACR_PASSWORD` (which are unrelated - those only grant Docker push/pull to ACR,
+  not any Azure Resource Manager access; they could never have been reused for deployment).
+- `.github/workflows/deploy.yml` — `workflow_dispatch` with a `tag` input, logs into Azure via
+  OIDC, runs `az containerapp update` for both `aiworkshop-backend` and `aiworkshop-frontend`.
+  This `az` call runs on GitHub's runners, not this machine, so the local network issue doesn't
+  affect it.
+- `build-and-push.yml` now also tags images with a short 7-character SHA (in addition to `latest`
+  and the full SHA), purely so tags are human-scannable in the registry and easy to pass around.
+- `/deploy-prod` is filled in with the real resource names. It never requires typing a commit SHA
+  by hand: with no argument, it finds the latest **successful** build on `main` via `gh run list`,
+  confirms the commit with the user in plain language, then runs
+  `gh workflow run deploy.yml -f tag=<short-sha>` to actually deploy.
+- Not yet tested end to end — next session should do a real `/deploy-prod` run to confirm the OIDC
+  wiring actually works before relying on it at the workshop.
+
+### What's left to do
+
+- Export/write a **Bicep template** for the resource group so it's reproducible as code instead of
+  manual Portal clicks (the "before and after" of ClickOps vs IaC is a good workshop artifact in
+  itself) - apply it the same way as deploys, via a GitHub Actions workflow using the OIDC
+  credential above, for a second/throwaway resource group to prove it actually works before the
+  "set up a fresh copy of this infra" part of the workshop depends on it.
+- Add one backend test and one frontend test (kept deliberately minimal — the point is to
+  demonstrate the `/deploy-test` gate blocking a bad deploy, not test coverage depth).
+- Try fixing the local `az` network issue (optional/lower priority, since GitHub Actions already
+  covers real deployment needs) - worth checking whether it's the corporate VPN/proxy specifically
+  by testing from a different network.
+- The actual workshop demo step (edit-popup feature on a branch, with a deliberately introduced
+  bug to show the regression-test gate catching it) is intentionally not built yet - saved for the
+  live walkthrough itself, per earlier discussion.
