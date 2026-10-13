@@ -10,13 +10,17 @@ Used as a workshop sample to show how to work with Claude Code in a production-s
 
 ## Environment and commands
 
-This project uses Docker Compose profiles instead of separate environments per stack:
+This project uses Docker Compose profiles instead of separate environments per stack. Dev and test
+must each use their own Compose **project name** (`-p`) - without it, both profiles' containers
+share the same default names and starting one silently tears down and replaces the other instead
+of running alongside it:
 
-- Start dev environment: `docker compose --profile dev --env-file .env.dev up`
-- Start test environment: `docker compose --profile test --env-file .env.test up`
-- Run backend tests: `docker compose exec backend dotnet test`
-- Run frontend tests: `docker compose exec frontend npm test`
-- Stop everything: `docker compose down`
+- Start dev environment: `docker compose -p aiworkshop-dev --profile dev --env-file .env.dev up`
+- Start test environment: `docker compose -p aiworkshop-test --profile test --env-file .env.test up`
+- Run backend tests: `docker compose -p aiworkshop-test exec backend dotnet test`
+- Run frontend tests: `docker compose -p aiworkshop-test exec frontend npm test`
+- Stop dev: `docker compose -p aiworkshop-dev down`
+- Stop test: `docker compose -p aiworkshop-test down`
 
 Always confirm which profile (`dev` or `test`) is intended before running compose commands — never assume.
 

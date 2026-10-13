@@ -4,6 +4,7 @@ services:
       context: ./frontend
       args:
         VITE_API_URL: ${VITE_API_URL}
+        VITE_APP_ENV: ${APP_ENV}
     profiles: ["dev", "test"]
     ports:
       - "${FRONTEND_PORT}:80"
