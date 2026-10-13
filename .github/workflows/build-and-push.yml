@@ -63,6 +63,7 @@ jobs:
           push: true
           build-args: |
             VITE_API_URL=${{ env.BACKEND_URL }}
+            VITE_APP_ENV=prod
           tags: |
             ${{ env.REGISTRY }}/frontend:${{ github.sha }}
             ${{ env.REGISTRY }}/frontend:${{ steps.vars.outputs.short_sha }}

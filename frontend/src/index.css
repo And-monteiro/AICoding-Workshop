@@ -65,6 +65,40 @@ body {
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
 }
 
+.env-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.env-badge--dev {
+  background: #eef2ff;
+  color: var(--color-primary-dark);
+  border-color: #c7d2fe;
+}
+
+.env-badge--test {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.env-badge--prod {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.env-badge--local {
+  background: #f3f4f6;
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}
+
 .top-nav .nav-links {
   display: flex;
   gap: 28px;
