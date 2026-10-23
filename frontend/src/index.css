@@ -124,6 +124,10 @@ body {
   align-items: flex-end;
   justify-content: space-between;
   margin-bottom: 24px;
+  padding: 16px 24px;
+  border-radius: var(--radius);
+  background: var(--color-danger);
+  color: #ffffff;
 }
 
 .page-header h1 {
@@ -135,7 +139,7 @@ body {
 
 .page-header p {
   margin: 0;
-  color: var(--color-text-muted);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 0.9rem;
 }
 
