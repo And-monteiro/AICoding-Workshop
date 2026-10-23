@@ -31,7 +31,7 @@ function App() {
       <div className="page-body">
         <header className="page-header">
           <div>
-            <h1>AI-Workshop Demo</h1>
+            <h1>AI Workshop demo</h1>
             <p>Read straight from Postgres through the API.</p>
           </div>
         </header>
