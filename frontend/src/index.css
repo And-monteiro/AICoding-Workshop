@@ -46,7 +46,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
-  background: var(--color-surface);
+  background: var(--color-danger);
   border-bottom: 1px solid var(--color-border);
 }
 
