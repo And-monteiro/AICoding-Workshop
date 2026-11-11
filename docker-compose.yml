@@ -23,6 +23,20 @@ services:
       db:
         condition: service_healthy
 
+  # Test runners. Own "tests" profile so `up` for dev/test never starts them.
+  # Run with: docker compose -p aiworkshop-test --profile tests --env-file .env.test run --rm --build <service>
+  backend-tests:
+    build:
+      context: ./backend
+      target: test
+    profiles: ["tests"]
+
+  frontend-tests:
+    build:
+      context: ./frontend
+      target: test
+    profiles: ["tests"]
+
   db:
     image: postgres:16-alpine
     profiles: ["dev", "test"]

@@ -1,7 +1,15 @@
-FROM node:20-alpine AS build
+FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json ./
 RUN npm install
+
+# Test runner: `docker compose ... run --rm frontend-tests` builds this stage.
+# It is never part of the production image (the last stage below is).
+FROM deps AS test
+COPY . .
+CMD ["npm", "test"]
+
+FROM deps AS build
 COPY . .
 ARG VITE_API_URL
 ARG VITE_APP_ENV

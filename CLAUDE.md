@@ -17,8 +17,11 @@ of running alongside it:
 
 - Start dev environment: `docker compose -p aiworkshop-dev --profile dev --env-file .env.dev up`
 - Start test environment: `docker compose -p aiworkshop-test --profile test --env-file .env.test up`
-- Run backend tests: `docker compose -p aiworkshop-test exec backend dotnet test`
-- Run frontend tests: `docker compose -p aiworkshop-test exec frontend npm test`
+- Run backend tests: `docker compose -p aiworkshop-test --profile tests --env-file .env.test run --rm --build backend-tests`
+- Run frontend tests: `docker compose -p aiworkshop-test --profile tests --env-file .env.test run --rm --build frontend-tests`
+  (the tests run in throwaway containers built from the `test` stage of each Dockerfile; the runtime
+  images have no SDK/Node, so `exec` into the running containers does not work for tests)
+- `/deploy-test` and `/deploy-prod` both run these two suites first and abort if either fails.
 - Stop dev: `docker compose -p aiworkshop-dev down`
 - Stop test: `docker compose -p aiworkshop-test down`
 
@@ -114,8 +117,7 @@ yet. So actual deployment still doesn't run `az` locally; it goes through GitHub
   by hand: with no argument, it finds the latest **successful** build on `main` via `gh run list`,
   confirms the commit with the user in plain language, then runs
   `gh workflow run deploy.yml -f tag=<short-sha>` to actually deploy.
-- Not yet tested end to end — next session should do a real `/deploy-prod` run to confirm the OIDC
-  wiring actually works before relying on it at the workshop.
+- Verified end to end: several `Deploy to Azure (prod)` runs have succeeded via `/deploy-prod`.
 
 ### What's left to do
 
@@ -124,11 +126,10 @@ yet. So actual deployment still doesn't run `az` locally; it goes through GitHub
   itself) - apply it the same way as deploys, via a GitHub Actions workflow using the OIDC
   credential above, for a second/throwaway resource group to prove it actually works before the
   "set up a fresh copy of this infra" part of the workshop depends on it.
-- Add one backend test and one frontend test (kept deliberately minimal — the point is to
-  demonstrate the `/deploy-test` gate blocking a bad deploy, not test coverage depth).
 - Try fixing the local `az` network issue (optional/lower priority, since GitHub Actions already
   covers real deployment needs) - worth checking whether it's the corporate VPN/proxy specifically
   by testing from a different network.
-- The actual workshop demo step (edit-popup feature on a branch, with a deliberately introduced
-  bug to show the regression-test gate catching it) is intentionally not built yet - saved for the
-  live walkthrough itself, per earlier discussion.
+- The workshop demo: the image-zoom feature (magnifier button opens a popup) is on `main` with tests;
+  a separate, deliberately bugged branch (zoom click does nothing) is used to show the test gate
+  failing in `/deploy-test`, followed by a clean change passing both `/deploy-*` commands. The tests
+  are intentionally minimal (zoom component, message list, backend `/health`).

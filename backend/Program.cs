@@ -76,3 +76,6 @@ static async Task EnsureDatabaseSeededAsync(string connectionString)
 }
 
 record MessageDto(int Id, string Text);
+
+// Exposes the entry point to the test project (WebApplicationFactory<Program>).
+public partial class Program { }
