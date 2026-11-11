@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { fetchMessages, Message } from './api';
+import { ImageCard } from './components/ImageCard';
 import { MessageList } from './components/MessageList';
+import pipelineImage from './assets/ai-workshop-pipeline.svg';
 
 const appEnv = (import.meta.env.VITE_APP_ENV ?? 'local').toLowerCase();
 
@@ -37,6 +39,12 @@ function App() {
         </header>
 
         {error && <div className="error-banner">{error}</div>}
+
+        <ImageCard
+          src={pipelineImage}
+          alt="Diagram of the delivery loop: prompt, code, test gate, merge and production"
+          caption="From prompt to production. Click the magnifier to zoom in."
+        />
 
         <div className="card">
           <div className="table-header">

@@ -18,6 +18,13 @@ workflow, since local `az` may not reliably reach Azure's management API on this
 Steps:
 1. **Local changes (default when there is no argument).** If `git status` shows uncommitted changes
    to the app code, ship them:
+   - **Test gate first, before any branch, commit or push.** Run both suites against the working tree
+     (same commands as /deploy-test step 2):
+     `docker compose -p aiworkshop-test --profile tests --env-file .env.test run --rm --build backend-tests`
+     and `... run --rm --build frontend-tests`. Run both even if the first fails. If either fails,
+     report `TEST GATE FAILED` with the suite and failing tests, state that nothing was branched,
+     committed, pushed or deployed, and **stop**. Never skip, weaken or work around the gate. On success,
+     report `TEST GATE PASSED` (tests per suite) in one line and continue.
    - Create a branch `fix/<short-description>` (or `feature/...`) from the current state. Never commit
      directly to `main` (CLAUDE.md).
    - Commit the changes with a message that explains why. End it with the Co-Authored-By line from the
@@ -36,7 +43,11 @@ Steps:
    needed. The app paths that trigger a build are `frontend/**` and `backend/**`; anything outside them
    doesn't change the images.
 
-2. **No local changes and no argument.** Find the most recent **successful** run of the
+   If the local changes are already committed on a feature branch (nothing uncommitted), the gate still
+   runs on that branch's code before it is pushed or merged.
+
+2. **No local changes and no argument.** (The commit already passed the gate when it was shipped, so the
+   gate is not re-run here.) Find the most recent **successful** run of the
    "Build and push images to ACR" workflow on `main` (`gh run list`), not just the latest commit — it
    must be a commit that actually got built and pushed. Use its commit SHA.
 
