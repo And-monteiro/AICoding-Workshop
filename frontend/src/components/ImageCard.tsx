@@ -18,6 +18,9 @@ export function ImageCard({ src, alt, caption }: ImageCardProps) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [zoomed]);
 
+  const openZoom = () => setZoomed(zoomed);
+  const closeZoom = () => setZoomed(false);
+
   return (
     <>
       <figure className="image-card">
@@ -27,7 +30,7 @@ export function ImageCard({ src, alt, caption }: ImageCardProps) {
             type="button"
             className="zoom-button"
             aria-label="Zoom image"
-            onClick={() => setZoomed(true)}
+            onClick={openZoom}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -41,7 +44,7 @@ export function ImageCard({ src, alt, caption }: ImageCardProps) {
       </figure>
 
       {zoomed && (
-        <div className="lightbox-backdrop" onClick={() => setZoomed(false)}>
+        <div className="lightbox-backdrop" onClick={closeZoom}>
           <div
             role="dialog"
             aria-modal="true"
@@ -53,7 +56,7 @@ export function ImageCard({ src, alt, caption }: ImageCardProps) {
               type="button"
               className="lightbox__close"
               aria-label="Close zoomed image"
-              onClick={() => setZoomed(false)}
+              onClick={closeZoom}
             >
               ×
             </button>
