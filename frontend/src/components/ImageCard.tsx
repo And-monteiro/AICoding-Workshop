@@ -18,7 +18,7 @@ export function ImageCard({ src, alt, caption }: ImageCardProps) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [zoomed]);
 
-  const openZoom = () => setZoomed(zoomed);
+  const openZoom = () => setZoomed(true);
   const closeZoom = () => setZoomed(false);
 
   return (
